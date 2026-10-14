@@ -1,1 +1,231 @@
-const axios = require('axios');\n\n/**\n * Resume Analyzer Service\n * Analyzes user's resume and generates personalized interview questions\n * This is a UNIQUE feature that sets Interview Prep Platform apart!\n */\n\nclass ResumeAnalyzer {\n  constructor() {\n    this.openaiApiKey = process.env.OPENAI_API_KEY;\n  }\n\n  /**\n   * Extract skills from resume text\n   * Uses AI to intelligently identify technical and soft skills\n   */\n  async extractSkills(resumeText) {\n    try {\n      const prompt = `\nAnalyze this resume and extract:\n1. Technical Skills (programming languages, frameworks, tools)\n2. Soft Skills (leadership, communication, etc.)\n3. Experience Level (entry, mid, senior)\n4. Primary domains (web dev, ML, DevOps, etc.)\n\nResume:\n${resumeText}\n\nReturn as JSON with keys: technicalSkills (array), softSkills (array), experienceLevel (string), domains (array)\n`;\n\n      const response = await axios.post(\n        'https://api.openai.com/v1/chat/completions',\n        {\n          model: 'gpt-3.5-turbo',\n          messages: [{ role: 'user', content: prompt }],\n          temperature: 0.3,\n        },\n        {\n          headers: {\n            'Authorization': `Bearer ${this.openaiApiKey}`,\n            'Content-Type': 'application/json',\n          },\n        }\n      );\n\n      const content = response.data.choices[0].message.content;\n      const jsonMatch = content.match(/\\{[^{}]*\\}/s);\n      return jsonMatch ? JSON.parse(jsonMatch[0]) : null;\n    } catch (error) {\n      console.error('Error extracting skills:', error.message);\n      throw error;\n    }\n  }\n\n  /**\n   * Generate personalized interview questions\n   * Questions are tailored to user's skills and experience\n   * UNIQUE FEATURE: No other platform does this!\n   */\n  async generatePersonalizedQuestions(resumeProfile, count = 10) {\n    try {\n      const { technicalSkills, softSkills, experienceLevel, domains } = resumeProfile;\n\n      const prompt = `\nGenerate ${count} interview questions for a ${experienceLevel} developer with:\nTechnical Skills: ${technicalSkills.join(', ')}\nDomains: ${domains.join(', ')}\nSoft Skills: ${softSkills.join(', ')}\n\nRequirements:\n1. 30% questions should test their specific technical skills\n2. 30% questions should be behavioral (soft skills)\n3. 20% questions should be system design or architecture (appropriate for ${experienceLevel} level)\n4. 20% questions should be problem-solving and edge cases\n\nFor each question, provide:\n- Question text\n- Expected answer keywords\n- Why this question is relevant to their profile\n- Difficulty level (easy/medium/hard)\n\nReturn as JSON array with objects containing: question, expectedKeywords (array), relevance (string), difficulty (string)\n`;\n\n      const response = await axios.post(\n        'https://api.openai.com/v1/chat/completions',\n        {\n          model: 'gpt-3.5-turbo',\n          messages: [{ role: 'user', content: prompt }],\n          temperature: 0.7,\n          max_tokens: 2000,\n        },\n        {\n          headers: {\n            'Authorization': `Bearer ${this.openaiApiKey}`,\n            'Content-Type': 'application/json',\n          },\n        }\n      );\n\n      const content = response.data.choices[0].message.content;\n      const jsonMatch = content.match(/\\[.*\\]/s);\n      return jsonMatch ? JSON.parse(jsonMatch[0]) : [];\n    } catch (error) {\n      console.error('Error generating questions:', error.message);\n      throw error;\n    }\n  }\n\n  /**\n   * Evaluate user's interview answer\n   * AI-powered assessment of the answer quality\n   */\n  async evaluateAnswer(question, userAnswer, expectedKeywords) {\n    try {\n      const prompt = `\nEvaluate this interview answer:\n\nQuestion: ${question}\nExpected Keywords/Topics: ${expectedKeywords.join(', ')}\nUser's Answer: ${userAnswer}\n\nProvide:\n1. Score (0-100)\n2. Strengths (array of what they did well)\n3. Weaknesses (array of what they missed)\n4. Improvements (array of suggestions to improve)\n5. Feedback (brief, constructive feedback)\n\nReturn as JSON with keys: score, strengths (array), weaknesses (array), improvements (array), feedback (string)\n`;\n\n      const response = await axios.post(\n        'https://api.openai.com/v1/chat/completions',\n        {\n          model: 'gpt-3.5-turbo',\n          messages: [{ role: 'user', content: prompt }],\n          temperature: 0.3,\n        },\n        {\n          headers: {\n            'Authorization': `Bearer ${this.openaiApiKey}`,\n            'Content-Type': 'application/json',\n          },\n        }\n      );\n\n      const content = response.data.choices[0].message.content;\n      const jsonMatch = content.match(/\\{[^{}]*\\}/s);\n      return jsonMatch ? JSON.parse(jsonMatch[0]) : null;\n    } catch (error) {\n      console.error('Error evaluating answer:', error.message);\n      throw error;\n    }\n  }\n\n  /**\n   * Generate interview preparation plan\n   * Based on resume analysis, create a customized study plan\n   */\n  async generatePrepPlan(resumeProfile) {\n    try {\n      const { technicalSkills, softSkills, experienceLevel, domains } = resumeProfile;\n\n      const prompt = `\nCreate a 4-week interview preparation plan for a ${experienceLevel} developer:\nCurrent Skills: ${technicalSkills.join(', ')}\nAreas: ${domains.join(', ')}\nTarget: Senior Technical Interview\n\nPlan should include:\n1. Week 1: Focus areas (what to practice)\n2. Week 2: Practice problems and topics\n3. Week 3: Mock interviews and system design\n4. Week 4: Final reviews and weak areas\n\nEach week should have:\n- Main focus\n- Daily topics (5 days)\n- Problems to solve (specific count)\n- Mock interview topics\n\nReturn as JSON with weeks array containing focus, dailyTopics (array), problemsCount (number), mockInterviewTopics (array)\n`;\n\n      const response = await axios.post(\n        'https://api.openai.com/v1/chat/completions',\n        {\n          model: 'gpt-3.5-turbo',\n          messages: [{ role: 'user', content: prompt }],\n          temperature: 0.6,\n          max_tokens: 1500,\n        },\n        {\n          headers: {\n            'Authorization': `Bearer ${this.openaiApiKey}`,\n            'Content-Type': 'application/json',\n          },\n        }\n      );\n\n      const content = response.data.choices[0].message.content;\n      const jsonMatch = content.match(/\\{[^{}]*\\}/s);\n      return jsonMatch ? JSON.parse(jsonMatch[0]) : null;\n    } catch (error) {\n      console.error('Error generating prep plan:', error.message);\n      throw error;\n    }\n  }\n\n  /**\n   * Suggest gap-filling resources\n   * Identifies weak areas and recommends topics to study\n   */\n  async suggestLearningResources(resumeProfile, performanceHistory) {\n    try {\n      const { technicalSkills, domains } = resumeProfile;\n\n      const prompt = `\nBased on:\nUser's Skills: ${technicalSkills.join(', ')}\nWeak Topics (from performance): ${performanceHistory.weakTopics?.join(', ') || 'None yet'}\nDomains: ${domains.join(', ')}\n\nSuggest learning resources:\n1. Top 5 topics to master\n2. For each topic: recommended LeetCode problem patterns\n3. System design topics if applicable\n4. Recommended YouTube channels/courses\n5. Books or articles\n\nReturn as JSON with topics (array of {name, leetcodePatterns (array), resources (array)})\n`;\n\n      const response = await axios.post(\n        'https://api.openai.com/v1/chat/completions',\n        {\n          model: 'gpt-3.5-turbo',\n          messages: [{ role: 'user', content: prompt }],\n          temperature: 0.7,\n          max_tokens: 1200,\n        },\n        {\n          headers: {\n            'Authorization': `Bearer ${this.openaiApiKey}`,\n            'Content-Type': 'application/json',\n          },\n        }\n      );\n\n      const content = response.data.choices[0].message.content;\n      const jsonMatch = content.match(/\\{[^{}]*\\}/s);\n      return jsonMatch ? JSON.parse(jsonMatch[0]) : null;\n    } catch (error) {\n      console.error('Error suggesting resources:', error.message);\n      throw error;\n    }\n  }\n}\n\nmodule.exports = new ResumeAnalyzer();\n"
+const axios = require('axios');
+const pLimit = require('p-limit');
+
+const limit = pLimit(5); // max 5 OpenAI calls in flight at once
+
+// Single place that talks to OpenAI: timeout + retry with backoff on 429 / 5xx / timeouts
+async function callOpenAI(body, retries = 3) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const res = await axios.post(
+        'https://api.openai.com/v1/chat/completions',
+        body,
+        { headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` }, timeout: 30000 }
+      );
+      return res.data.choices[0].message.content;
+    } catch (err) {
+      const status = err.response?.status;
+      const retryable = status === 429 || status >= 500 || err.code === 'ECONNABORTED';
+      if (!retryable || attempt >= retries) throw err;
+      const wait = Number(err.response?.headers?.['retry-after']) * 1000 || 2 ** attempt * 1000;
+      await new Promise((r) => setTimeout(r, wait + Math.random() * 250));
+    }
+  }
+}
+
+/**
+ * Resume Analyzer Service
+ * Analyzes user's resume and generates personalized interview questions
+ * This is a UNIQUE feature that sets Interview Prep Platform apart!
+ */
+
+class ResumeAnalyzer {
+  constructor() {
+    this.openaiApiKey = process.env.OPENAI_API_KEY;
+  }
+
+  /**
+   * Extract skills from resume text
+   * Uses AI to intelligently identify technical and soft skills
+   */
+  async extractSkills(resumeText) {
+    try {
+      const prompt = `
+Analyze this resume and extract:
+1. Technical Skills (programming languages, frameworks, tools)
+2. Soft Skills (leadership, communication, etc.)
+3. Experience Level (entry, mid, senior)
+4. Primary domains (web dev, ML, DevOps, etc.)
+
+Resume:
+${resumeText}
+
+Return as JSON with keys: technicalSkills (array), softSkills (array), experienceLevel (string), domains (array)
+`;
+
+      const content = await limit(() => callOpenAI({
+          model: 'gpt-3.5-turbo',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.3,
+        }));
+      const jsonMatch = content.match(/\{[^{}]*\}/s);
+      return jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+    } catch (error) {
+      console.error('Error extracting skills:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Generate personalized interview questions
+   * Questions are tailored to user's skills and experience
+   * UNIQUE FEATURE: No other platform does this!
+   */
+  async generatePersonalizedQuestions(resumeProfile, count = 10) {
+    try {
+      const { technicalSkills, softSkills, experienceLevel, domains } = resumeProfile;
+
+      const prompt = `
+Generate ${count} interview questions for a ${experienceLevel} developer with:
+Technical Skills: ${technicalSkills.join(', ')}
+Domains: ${domains.join(', ')}
+Soft Skills: ${softSkills.join(', ')}
+
+Requirements:
+1. 30% questions should test their specific technical skills
+2. 30% questions should be behavioral (soft skills)
+3. 20% questions should be system design or architecture (appropriate for ${experienceLevel} level)
+4. 20% questions should be problem-solving and edge cases
+
+For each question, provide:
+- Question text
+- Expected answer keywords
+- Why this question is relevant to their profile
+- Difficulty level (easy/medium/hard)
+
+Return as JSON array with objects containing: question, expectedKeywords (array), relevance (string), difficulty (string)
+`;
+
+      const content = await limit(() => callOpenAI({
+          model: 'gpt-3.5-turbo',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.7,
+          max_tokens: 2000,
+        }));
+      const jsonMatch = content.match(/\[.*\]/s);
+      return jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+    } catch (error) {
+      console.error('Error generating questions:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Evaluate user's interview answer
+   * AI-powered assessment of the answer quality
+   */
+  async evaluateAnswer(question, userAnswer, expectedKeywords) {
+    try {
+      const prompt = `
+Evaluate this interview answer:
+
+Question: ${question}
+Expected Keywords/Topics: ${expectedKeywords.join(', ')}
+User's Answer: ${userAnswer}
+
+Provide:
+1. Score (0-100)
+2. Strengths (array of what they did well)
+3. Weaknesses (array of what they missed)
+4. Improvements (array of suggestions to improve)
+5. Feedback (brief, constructive feedback)
+
+Return as JSON with keys: score, strengths (array), weaknesses (array), improvements (array), feedback (string)
+`;
+
+      const content = await limit(() => callOpenAI({
+          model: 'gpt-3.5-turbo',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.3,
+        }));
+      const jsonMatch = content.match(/\{[^{}]*\}/s);
+      return jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+    } catch (error) {
+      console.error('Error evaluating answer:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Generate interview preparation plan
+   * Based on resume analysis, create a customized study plan
+   */
+  async generatePrepPlan(resumeProfile) {
+    try {
+      const { technicalSkills, softSkills, experienceLevel, domains } = resumeProfile;
+
+      const prompt = `
+Create a 4-week interview preparation plan for a ${experienceLevel} developer:
+Current Skills: ${technicalSkills.join(', ')}
+Areas: ${domains.join(', ')}
+Target: Senior Technical Interview
+
+Plan should include:
+1. Week 1: Focus areas (what to practice)
+2. Week 2: Practice problems and topics
+3. Week 3: Mock interviews and system design
+4. Week 4: Final reviews and weak areas
+
+Each week should have:
+- Main focus
+- Daily topics (5 days)
+- Problems to solve (specific count)
+- Mock interview topics
+
+Return as JSON with weeks array containing focus, dailyTopics (array), problemsCount (number), mockInterviewTopics (array)
+`;
+
+      const content = await limit(() => callOpenAI({
+          model: 'gpt-3.5-turbo',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.6,
+          max_tokens: 1500,
+        }));
+      const jsonMatch = content.match(/\{.*\}/s);
+      return jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+    } catch (error) {
+      console.error('Error generating prep plan:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Suggest gap-filling resources
+   * Identifies weak areas and recommends topics to study
+   */
+  async suggestLearningResources(resumeProfile, performanceHistory) {
+    try {
+      const { technicalSkills, domains } = resumeProfile;
+
+      const prompt = `
+Based on:
+User's Skills: ${technicalSkills.join(', ')}
+Weak Topics (from performance): ${performanceHistory.weakTopics?.join(', ') || 'None yet'}
+Domains: ${domains.join(', ')}
+
+Suggest learning resources:
+1. Top 5 topics to master
+2. For each topic: recommended LeetCode problem patterns
+3. System design topics if applicable
+4. Recommended YouTube channels/courses
+5. Books or articles
+
+Return as JSON with topics (array of {name, leetcodePatterns (array), resources (array)})
+`;
+
+      const content = await limit(() => callOpenAI({
+          model: 'gpt-3.5-turbo',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.7,
+          max_tokens: 1200,
+        }));
+      const jsonMatch = content.match(/\{.*\}/s);
+      return jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+    } catch (error) {
+      console.error('Error suggesting resources:', error.message);
+      throw error;
+    }
+  }
+}
+
+module.exports = new ResumeAnalyzer();
