@@ -18,13 +18,7 @@ A comprehensive web-based platform for practicing DSA, system design, and mock i
 - Interviewer feedback
 - Performance analytics
 
-### 3. **System Design Practice**
-- Interactive whiteboard
-- Curated design problems
-- Time-boxed sessions
-- Evaluator feedback
-
-### 4. **Progress Tracking**
+### 3. **Progress Tracking**
 - Personal dashboard with statistics
 - Problem-solving streaks
 - Difficulty progression
