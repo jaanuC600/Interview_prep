@@ -25,12 +25,12 @@ A comprehensive web-based platform for practicing DSA, system design, and mock i
 - Time tracking
 - Performance graphs
 
-### 5. **AI Hint Generator**
+### 4. **AI Hint Generator**
 - Context-aware hints using OpenAI
 - Progressive hint levels (approach → solution structure → code)
 - Plagiarism detection
 
-### 6. **Peer Learning**
+### 5. **Peer Learning**
 - Discuss solutions in community
 - View others' approaches
 - Code reviews
