@@ -3,6 +3,8 @@ const express = require('express');
 const cors = require('cors');
 const http = require('http');
 const { Server } = require('socket.io');
+const rateLimit = require('express-rate-limit');
+const resumeRoutes = require('./routes/resume');
 
 const app = express();
 const server = http.createServer(app);
@@ -18,6 +20,15 @@ app.use(express.json());
 app.get('/api/health', (req, res) => {
   res.json({ status: 'Backend running', timestamp: new Date() });
 });
+
+// Resume analyzer routes, rate-limited per IP so one client can't flood the AI calls
+const resumeLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/resume', resumeLimiter, resumeRoutes);
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
